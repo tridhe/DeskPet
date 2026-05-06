@@ -13,6 +13,7 @@ const ANIMATIONS = {
 
 const container = document.getElementById('lottie-container')
 let currentAnim = null
+let angryPeriodMs = 60000
 let angryTimer = null
 let petProgress = 0
 let isMouseDown = false
@@ -134,7 +135,11 @@ ipcRenderer.on('trigger-pet', (_, data) => {
     if (currentMode === 'blocking') {
       playAnimation('angry')
     }
-  }, 60000)
+  }, angryPeriodMs)
+})
+
+ipcRenderer.on('update-angry-period', (_, ms) => {
+  angryPeriodMs = ms
 })
 
 // ── IPC: celebration (task completed) ────────────────────────────────────────

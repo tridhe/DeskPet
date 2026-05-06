@@ -78,6 +78,10 @@ ipcMain.on('pet-area-leave', () => {
   if (petWindow) petWindow.setIgnoreMouseEvents(true, { forward: true })
 })
 
+ipcMain.on('update-angry-period', (_, ms) => {
+  if (petWindow) petWindow.webContents.send('update-angry-period', ms)
+})
+
 ipcMain.on('task-completed', () => {
   if (!petWindow) return
   petWindow.setIgnoreMouseEvents(false)

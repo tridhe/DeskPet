@@ -314,6 +314,31 @@
     }
 
     .nogo-tag button:hover { color: #e53935; }
+
+    /* Settings */
+    .settings-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 13px;
+      color: #555;
+    }
+
+    .settings-row label { font-weight: 500; }
+
+    .settings-row select {
+      padding: 6px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      background: white;
+      color: #333;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .settings-row select:focus { border-color: #e8632a; }
   </style>
 </head>
 <body>
@@ -343,6 +368,34 @@
     <div class="empty-state" id="empty-state">
       <span class="dog-emoji">🐕</span>
       Add a task to get started.<br/>The dog is watching.
+    </div>
+  </div>
+
+  <div class="nogo-section">
+    <button class="nogo-toggle" id="settings-toggle" onclick="toggleSettings()">
+      <span>Settings</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="nogo-body" id="settings-body">
+      <div class="settings-row">
+        <label>Summon dog after</label>
+        <select id="grace-period" onchange="saveGracePeriod()">
+          <option value="15">15 seconds</option>
+          <option value="30" selected>30 seconds</option>
+          <option value="60">1 minute</option>
+          <option value="120">2 minutes</option>
+          <option value="300">5 minutes</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label>Go angry after</label>
+        <select id="angry-period" onchange="saveAngryPeriod()">
+          <option value="30">30 seconds</option>
+          <option value="60" selected>1 minute</option>
+          <option value="120">2 minutes</option>
+          <option value="300">5 minutes</option>
+        </select>
+      </div>
     </div>
   </div>
 

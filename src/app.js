@@ -224,6 +224,40 @@ function isDistraction(winInfo) {
   return false
 }
 
+// ── Settings ──────────────────────────────────────────────────────────────────
+function getGracePeriod() {
+  return parseInt(localStorage.getItem('deskpet-grace') || '30') * 1000
+}
+
+function getAngryPeriod() {
+  return parseInt(localStorage.getItem('deskpet-angry') || '60') * 1000
+}
+
+function saveGracePeriod() {
+  const val = document.getElementById('grace-period').value
+  localStorage.setItem('deskpet-grace', val)
+}
+
+function saveAngryPeriod() {
+  const val = document.getElementById('angry-period').value
+  localStorage.setItem('deskpet-angry', val)
+  ipcRenderer.send('update-angry-period', parseInt(val) * 1000)
+}
+
+function toggleSettings() {
+  const toggle = document.getElementById('settings-toggle')
+  const body = document.getElementById('settings-body')
+  toggle.classList.toggle('open')
+  body.classList.toggle('visible')
+}
+
+function initSettings() {
+  const grace = localStorage.getItem('deskpet-grace') || '30'
+  const angry = localStorage.getItem('deskpet-angry') || '60'
+  document.getElementById('grace-period').value = grace
+  document.getElementById('angry-period').value = angry
+}
+
 function startWastedTimer() {
   if (wastedInterval) return
   wastedInterval = setInterval(() => {
@@ -257,8 +291,7 @@ function startDetection() {
       if (distracted) {
         startWastedTimer()
         if (!distractionTimer) {
-          console.log('starting 3s timer...')
-          distractionTimer = setTimeout(triggerPet, 30000)
+          distractionTimer = setTimeout(triggerPet, getGracePeriod())
         }
       } else {
         if (distractionTimer) console.log('timer cleared — not distracting')
@@ -277,6 +310,7 @@ function startDetection() {
 renderTasks()
 updateStats()
 renderNoGoTags()
+initSettings()
 startDetection()
 
 // Debug: Cmd+Shift+D triggers dog immediately, Cmd+Shift+C triggers celebration
