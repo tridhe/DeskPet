@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DeskPet — Tasks</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fdf6ec;
+      color: #333;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: #e8632a;
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    header h1 { font-size: 20px; font-weight: 700; }
+    header span { font-size: 22px; }
+
+    .stats-bar {
+      background: #fff3e0;
+      padding: 8px 20px;
+      font-size: 13px;
+      color: #666;
+      border-bottom: 1px solid #f0d8b8;
+      display: flex;
+      gap: 20px;
+    }
+
+    .stats-bar strong { color: #e8632a; }
+
+    .add-task {
+      padding: 16px 20px;
+      background: white;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .add-task input[type="text"] {
+      flex: 1;
+      min-width: 140px;
+      padding: 9px 12px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .add-task input[type="text"]:focus { border-color: #e8632a; }
+
+    .add-task input[type="time"] {
+      padding: 9px 8px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .add-task button {
+      padding: 9px 16px;
+      background: #e8632a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .add-task button:hover { background: #c94f1a; }
+
+    .task-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 20px;
+    }
+
+    .task-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: white;
+      border-radius: 10px;
+      margin-bottom: 8px;
+      border: 1.5px solid #f0e6d6;
+      transition: opacity 0.3s;
+    }
+
+    .task-item.done {
+      opacity: 0.5;
+    }
+
+    .task-item.done .task-name {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    .task-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #e8632a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .task-name { flex: 1; font-size: 14px; font-weight: 500; }
+
+    .task-deadline {
+      font-size: 12px;
+      color: #999;
+      flex-shrink: 0;
+    }
+
+    .task-deadline.overdue { color: #e53935; font-weight: 600; }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #ccc;
+      font-size: 16px;
+      padding: 2px 4px;
+      line-height: 1;
+      transition: color 0.2s;
+    }
+
+    .delete-btn:hover { color: #e53935; }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #bbb;
+      font-size: 14px;
+    }
+
+    .empty-state .dog-emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+
+    footer {
+      padding: 12px 20px;
+      background: white;
+      border-top: 1px solid #eee;
+    }
+
+    .summary-btn {
+      width: 100%;
+      padding: 10px;
+      background: #fff3e0;
+      border: 1.5px solid #f0d8b8;
+      border-radius: 8px;
+      color: #e8632a;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .summary-btn:hover { background: #ffe0b2; }
+
+    /* Summary modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.visible { display: flex; }
+
+    .modal {
+      background: white;
+      border-radius: 16px;
+      padding: 28px 24px;
+      width: 320px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+
+    .modal h2 { font-size: 20px; margin-bottom: 16px; color: #e8632a; }
+    .modal .stat { font-size: 15px; margin-bottom: 8px; color: #555; }
+    .modal .dog-msg { font-size: 14px; color: #888; margin: 16px 0; font-style: italic; }
+
+    .modal button {
+      padding: 10px 24px;
+      background: #e8632a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    /* Permission banner */
+    .permission-banner {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin: 12px 20px 0;
+      font-size: 13px;
+      color: #664d03;
+      display: none;
+    }
+
+    .permission-banner.visible { display: block; }
+    .permission-banner a { color: #e8632a; cursor: pointer; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <span>🐕</span>
+    <h1>DeskPet</h1>
+  </header>
+
+  <div class="stats-bar">
+    <span>Caught today: <strong id="caught-count">0</strong></span>
+    <span>Wasted: <strong id="wasted-time">0 min</strong></span>
+  </div>
+
+  <div class="permission-banner" id="perm-banner">
+    Screen Recording permission needed.
+    <a onclick="openPrivacySettings()">Open System Settings →</a>
+  </div>
+
+  <div class="add-task">
+    <input type="text" id="task-input" placeholder="What do you need to do?" maxlength="60" />
+    <input type="time" id="task-time" />
+    <button onclick="addTask()">Add</button>
+  </div>
+
+  <div class="task-list" id="task-list">
+    <div class="empty-state" id="empty-state">
+      <span class="dog-emoji">🐕</span>
+      Add a task to get started.<br/>The dog is watching.
+    </div>
+  </div>
+
+  <footer>
+    <button class="summary-btn" onclick="showSummary()">End of Day Summary</button>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="summary-btn" style="background:#fff0eb; color:#e8632a;" onclick="triggerPet()">Test: Summon Dog</button>
+      <button class="summary-btn" style="background:#fff0eb; color:#e8632a;" onclick="ipcRenderer.send('task-completed')">Test: Celebrate</button>
+    </div>
+  </footer>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>Day Summary 🐾</h2>
+      <div class="stat" id="summary-tasks"></div>
+      <div class="stat" id="summary-wasted"></div>
+      <div class="stat" id="summary-caught"></div>
+      <div class="dog-msg" id="summary-msg"></div>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <script src="../src/app.js"></script>
+</body>
+</html>

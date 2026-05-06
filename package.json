@@ -1,0 +1,16 @@
+{
+  "name": "deskpet",
+  "version": "1.0.0",
+  "description": "Shiba Inu procrastination blocker for macOS",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^29.0.0"
+  },
+  "dependencies": {
+    "lottie-web": "^5.12.2",
+    "active-win": "^8.1.0"
+  }
+}
