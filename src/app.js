@@ -45,15 +45,17 @@ function renderTasks() {
   const list = document.getElementById('task-list')
   const empty = document.getElementById('empty-state')
 
+  // Remove all task items but keep the empty-state element
+  Array.from(list.children).forEach(child => {
+    if (child.id !== 'empty-state') child.remove()
+  })
+
   if (tasks.length === 0) {
     empty.style.display = 'block'
-    list.innerHTML = ''
-    list.appendChild(empty)
     return
   }
 
   empty.style.display = 'none'
-  list.innerHTML = ''
 
   tasks.forEach((task, i) => {
     const div = document.createElement('div')
