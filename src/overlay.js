@@ -1,6 +1,34 @@
 // overlay.js — Pet animation + petting mechanic (renderer process)
 const { ipcRenderer } = require('electron')
 
+// ── Audio ─────────────────────────────────────────────────────────────────────
+const sounds = {
+  bark:    new Audio('../public/sounds/dog-barking.mp3'),
+  whine:   new Audio('../public/sounds/dog-whining.mp3'),
+  pant:    new Audio('../public/sounds/dog-panting.mp3'),
+  happy:   new Audio('../public/sounds/puppy-happy.mp3'),
+}
+
+let pantInterval = null
+
+function playSound(name) {
+  const s = sounds[name]
+  if (!s) return
+  s.currentTime = 0
+  s.play().catch(() => {})
+}
+
+function startPanting() {
+  if (pantInterval) return
+  playSound('pant')
+  pantInterval = setInterval(() => playSound('pant'), 800)
+}
+
+function stopPanting() {
+  clearInterval(pantInterval)
+  pantInterval = null
+}
+
 // ── Animation management ──────────────────────────────────────────────────────
 const ANIMATIONS = {
   sneaky:          '../public/animations/Flirting Dog.json',
@@ -71,11 +99,13 @@ function resetPetting() {
 }
 
 function onPettingComplete() {
+  stopPanting()
   clearTimeout(angryTimer)
   resetPetting()
   isMouseDown = false
   hideProgressBar()
   hideGuiltMsg()
+  playSound('happy')
 
   playAnimation('tail-wag', false)
   currentAnim.addEventListener('complete', () => {
@@ -87,9 +117,11 @@ container.addEventListener('mousedown', () => {
   if (currentMode !== 'blocking') return
   isMouseDown = true
   showProgressBar()
+  startPanting()
 })
 
 document.addEventListener('mouseup', () => {
+  if (isMouseDown) stopPanting()
   isMouseDown = false
 })
 
@@ -133,11 +165,15 @@ ipcRenderer.on('trigger-pet', (_, data) => {
   hideProgressBar()
 
   playAnimation('sneaky')
+  playSound('bark')
   showGuiltMsg(count)
 
   clearTimeout(angryTimer)
   angryTimer = setTimeout(() => {
-    if (currentMode === 'blocking') playAnimation('angry')
+    if (currentMode === 'blocking') {
+      playAnimation('angry')
+      playSound('whine')
+    }
   }, angryPeriodMs)
 })
 
@@ -147,6 +183,7 @@ ipcRenderer.on('user-returned', () => {
   clearTimeout(angryTimer)
   hideGuiltMsg()
   hideProgressBar()
+  playSound('happy')
 
   playAnimation('sparkly-eyes', false)
   currentAnim.addEventListener('complete', () => {
@@ -165,6 +202,7 @@ ipcRenderer.on('celebrate', () => {
   clearTimeout(angryTimer)
   hideGuiltMsg()
   hideProgressBar()
+  playSound('happy')
 
   playAnimation('rainbow-cap', false)
   currentAnim.addEventListener('complete', () => {
