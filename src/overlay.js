@@ -100,10 +100,10 @@ container.addEventListener('mousemove', (e) => {
   const isHorizontal = Math.abs(e.movementX) > 2 && Math.abs(e.movementY) < 6
   if (isHorizontal) {
     petProgress += Math.abs(e.movementX)
-    updateProgressBar(Math.min(petProgress / 300, 1))
+    updateProgressBar(Math.min(petProgress / 100, 1))
   }
 
-  if (petProgress >= 300) {
+  if (petProgress >= 100) {
     petProgress = 0
     onPettingComplete()
   }
@@ -157,5 +157,5 @@ ipcRenderer.on('celebrate', () => {
       ipcRenderer.send('hide-pet')
       currentMode = 'idle'
     }
-  }, 3000)
+  }, 1000)
 })
