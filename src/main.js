@@ -26,7 +26,6 @@ function createMainWindow() {
   })
 
   mainWindow.loadFile(path.join(__dirname, '../public/app.html'))
-  mainWindow.webContents.openDevTools({ mode: 'detach' })
 
   mainWindow.on('closed', () => {
     mainWindow = null

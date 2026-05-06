@@ -34,13 +34,6 @@ function updateStats() {
   localStorage.setItem('deskpet-wasted', wastedSeconds)
 }
 
-function isOverdue(timeStr) {
-  if (!timeStr) return false
-  const [h, m] = timeStr.split(':').map(Number)
-  const now = new Date()
-  return now.getHours() > h || (now.getHours() === h && now.getMinutes() > m)
-}
-
 function renderTasks() {
   const list = document.getElementById('task-list')
   const empty = document.getElementById('empty-state')
@@ -61,12 +54,9 @@ function renderTasks() {
     const div = document.createElement('div')
     div.className = 'task-item' + (task.done ? ' done' : '')
 
-    const overdue = !task.done && isOverdue(task.time)
-
     div.innerHTML = `
       <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTask(${i})" />
       <span class="task-name">${escapeHtml(task.name)}</span>
-      ${task.time ? `<span class="task-deadline ${overdue ? 'overdue' : ''}">${task.time}${overdue ? ' !' : ''}</span>` : ''}
       <button class="delete-btn" onclick="deleteTask(${i})">×</button>
     `
     list.appendChild(div)
@@ -80,15 +70,13 @@ function escapeHtml(str) {
 // ── Task actions ──────────────────────────────────────────────────────────────
 function addTask() {
   const input = document.getElementById('task-input')
-  const timeInput = document.getElementById('task-time')
   const name = input.value.trim()
   if (!name) return
 
-  tasks.push({ name, time: timeInput.value, done: false })
+  tasks.push({ name, done: false })
   saveTasks()
   renderTasks()
   input.value = ''
-  timeInput.value = ''
   input.focus()
 }
 
