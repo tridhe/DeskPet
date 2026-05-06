@@ -222,6 +222,98 @@
 
     .permission-banner.visible { display: block; }
     .permission-banner a { color: #e8632a; cursor: pointer; text-decoration: underline; }
+
+    /* No-Go List */
+    .nogo-section {
+      border-top: 1px solid #eee;
+      background: white;
+    }
+
+    .nogo-toggle {
+      width: 100%;
+      padding: 12px 20px;
+      background: none;
+      border: none;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nogo-toggle:hover { background: #fdf6ec; }
+    .nogo-toggle .arrow { font-size: 10px; transition: transform 0.2s; }
+    .nogo-toggle.open .arrow { transform: rotate(180deg); }
+
+    .nogo-body {
+      display: none;
+      padding: 0 20px 14px;
+    }
+
+    .nogo-body.visible { display: block; }
+
+    .nogo-add {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .nogo-add input {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .nogo-add input:focus { border-color: #e8632a; }
+
+    .nogo-add button {
+      padding: 7px 14px;
+      background: #e8632a;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .nogo-add button:hover { background: #c94f1a; }
+
+    .nogo-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .nogo-tag {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #fff3e0;
+      border: 1px solid #f0d8b8;
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: #555;
+    }
+
+    .nogo-tag button {
+      background: none;
+      border: none;
+      color: #bbb;
+      cursor: pointer;
+      font-size: 14px;
+      line-height: 1;
+      padding: 0;
+    }
+
+    .nogo-tag button:hover { color: #e53935; }
   </style>
 </head>
 <body>
@@ -251,6 +343,20 @@
     <div class="empty-state" id="empty-state">
       <span class="dog-emoji">🐕</span>
       Add a task to get started.<br/>The dog is watching.
+    </div>
+  </div>
+
+  <div class="nogo-section">
+    <button class="nogo-toggle" id="nogo-toggle" onclick="toggleNoGoList()">
+      <span>No-Go List</span>
+      <span class="arrow">▼</span>
+    </button>
+    <div class="nogo-body" id="nogo-body">
+      <div class="nogo-add">
+        <input type="text" id="nogo-input" placeholder="e.g. twitter, hacker news" maxlength="40" />
+        <button onclick="addNoGoItem()">Add</button>
+      </div>
+      <div class="nogo-tags" id="nogo-tags"></div>
     </div>
   </div>
 

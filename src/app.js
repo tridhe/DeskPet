@@ -145,24 +145,81 @@ function openPrivacySettings() {
   shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture')
 }
 
-// ── Distraction detection ─────────────────────────────────────────────────────
-const DISTRACTION_KEYWORDS = [
+// ── No-Go List ────────────────────────────────────────────────────────────────
+const DEFAULT_NOGO = [
   'youtube', 'reddit', 'twitter', 'x.com', 'instagram',
-  'tiktok', 'netflix', 'twitch', 'facebook'
+  'tiktok', 'netflix', 'twitch', 'facebook', 'spotify', 'discord'
 ]
 
-const DISTRACTION_APPS = ['spotify', 'discord']
+function loadNoGoList() {
+  const saved = localStorage.getItem('deskpet-nogo')
+  return saved ? JSON.parse(saved) : [...DEFAULT_NOGO]
+}
 
+function saveNoGoList(list) {
+  localStorage.setItem('deskpet-nogo', JSON.stringify(list))
+}
+
+function renderNoGoTags() {
+  const list = loadNoGoList()
+  const container = document.getElementById('nogo-tags')
+  container.innerHTML = ''
+  list.forEach((item, i) => {
+    const tag = document.createElement('div')
+    tag.className = 'nogo-tag'
+    tag.innerHTML = `<span>${escapeHtml(item)}</span><button onclick="removeNoGoItem(${i})">×</button>`
+    container.appendChild(tag)
+  })
+}
+
+function addNoGoItem() {
+  const input = document.getElementById('nogo-input')
+  const value = input.value.trim().toLowerCase()
+  if (!value) return
+  const list = loadNoGoList()
+  if (!list.includes(value)) {
+    list.push(value)
+    saveNoGoList(list)
+    renderNoGoTags()
+  }
+  input.value = ''
+  input.focus()
+}
+
+function removeNoGoItem(i) {
+  const list = loadNoGoList()
+  list.splice(i, 1)
+  saveNoGoList(list)
+  renderNoGoTags()
+}
+
+function toggleNoGoList() {
+  const toggle = document.getElementById('nogo-toggle')
+  const body = document.getElementById('nogo-body')
+  toggle.classList.toggle('open')
+  body.classList.toggle('visible')
+}
+
+document.getElementById('nogo-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') addNoGoItem()
+})
+
+// ── Distraction detection ─────────────────────────────────────────────────────
 function isDistraction(winInfo) {
   if (!winInfo) return false
   const title = (winInfo.title || '').toLowerCase()
   const url = (winInfo.url || '').toLowerCase()
   const appName = (winInfo.owner?.name || '').toLowerCase()
+  const haystack = title + ' ' + url + ' ' + appName
 
   const isBrowser = ['chrome', 'safari', 'firefox', 'arc'].some(b => appName.includes(b))
-  const haystack = title + ' ' + url
-  if (isBrowser && DISTRACTION_KEYWORDS.some(kw => haystack.includes(kw))) return true
-  if (DISTRACTION_APPS.some(a => appName.includes(a))) return true
+  const noGoList = loadNoGoList()
+
+  if (isBrowser) {
+    if (noGoList.some(kw => (title + ' ' + url).includes(kw))) return true
+  } else {
+    if (noGoList.some(kw => appName.includes(kw))) return true
+  }
 
   return false
 }
@@ -201,7 +258,7 @@ function startDetection() {
         startWastedTimer()
         if (!distractionTimer) {
           console.log('starting 3s timer...')
-          distractionTimer = setTimeout(triggerPet, 3000)
+          distractionTimer = setTimeout(triggerPet, 30000)
         }
       } else {
         if (distractionTimer) console.log('timer cleared — not distracting')
@@ -219,6 +276,7 @@ function startDetection() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 renderTasks()
 updateStats()
+renderNoGoTags()
 startDetection()
 
 // Debug: Cmd+Shift+D triggers dog immediately, Cmd+Shift+C triggers celebration
