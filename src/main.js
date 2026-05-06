@@ -4,6 +4,14 @@ const path = require('path')
 let mainWindow = null
 let petWindow = null
 
+const PET_W = 220
+const PET_H = 240
+
+function petX() {
+  const { width } = screen.getPrimaryDisplay().workAreaSize
+  return width - PET_W - 12
+}
+
 // ── Create main task-list window ──────────────────────────────────────────────
 function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -27,13 +35,11 @@ function createMainWindow() {
 
 // ── Create always-on-top pet overlay window ───────────────────────────────────
 function createPetWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize
-
   petWindow = new BrowserWindow({
-    width: 320,
-    height: 400,
-    x: Math.round((width - 320) / 2),
-    y: Math.round((height - 400) / 2),
+    width: PET_W,
+    height: PET_H,
+    x: petX(),
+    y: 12,
     transparent: true,
     frame: false,
     alwaysOnTop: true,
@@ -50,10 +56,13 @@ function createPetWindow() {
 
   petWindow.setAlwaysOnTop(true, 'screen-saver')
   petWindow.loadFile(path.join(__dirname, '../public/overlay.html'))
-  petWindow.hide()
 
-  // Pass through clicks on transparent areas
-  petWindow.setIgnoreMouseEvents(true, { forward: true })
+  // Start in ambient mode once loaded
+  petWindow.webContents.once('did-finish-load', () => {
+    petWindow.showInactive()
+    petWindow.setIgnoreMouseEvents(true, { forward: true })
+    petWindow.webContents.send('go-ambient')
+  })
 }
 
 // ── IPC: show/hide/update pet window ─────────────────────────────────────────
@@ -64,10 +73,10 @@ ipcMain.on('show-pet', (_, data) => {
   petWindow.webContents.send('trigger-pet', data)
 })
 
-ipcMain.on('hide-pet', () => {
+ipcMain.on('go-ambient', () => {
   if (!petWindow) return
-  petWindow.hide()
   petWindow.setIgnoreMouseEvents(true, { forward: true })
+  petWindow.webContents.send('go-ambient')
 })
 
 ipcMain.on('pet-area-enter', () => {
@@ -82,9 +91,15 @@ ipcMain.on('update-angry-period', (_, ms) => {
   if (petWindow) petWindow.webContents.send('update-angry-period', ms)
 })
 
+ipcMain.on('user-returned', () => {
+  if (!petWindow) return
+  petWindow.setIgnoreMouseEvents(true, { forward: true })
+  petWindow.webContents.send('user-returned')
+})
+
 ipcMain.on('task-completed', () => {
   if (!petWindow) return
-  petWindow.setIgnoreMouseEvents(false)
+  petWindow.setIgnoreMouseEvents(true, { forward: true })
   petWindow.showInactive()
   petWindow.webContents.send('celebrate')
 })
@@ -93,7 +108,6 @@ ipcMain.on('task-completed', () => {
 app.whenReady().then(() => {
   createMainWindow()
   createPetWindow()
-
 })
 
 app.on('window-all-closed', () => {

@@ -271,8 +271,10 @@ function stopWastedTimer() {
   wastedInterval = null
 }
 
+let dogIsBlocking = false
+
 function triggerPet() {
-  console.log('triggerPet fired!')
+  dogIsBlocking = true
   distractionCount++
   updateStats()
   ipcRenderer.send('show-pet', { count: distractionCount })
@@ -294,10 +296,13 @@ function startDetection() {
           distractionTimer = setTimeout(triggerPet, getGracePeriod())
         }
       } else {
-        if (distractionTimer) console.log('timer cleared — not distracting')
         stopWastedTimer()
         clearTimeout(distractionTimer)
         distractionTimer = null
+        if (dogIsBlocking) {
+          dogIsBlocking = false
+          ipcRenderer.send('user-returned')
+        }
       }
     } catch (e) {
       console.error('active-win error:', e.message)

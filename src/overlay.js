@@ -3,12 +3,12 @@ const { ipcRenderer } = require('electron')
 
 // ── Animation management ──────────────────────────────────────────────────────
 const ANIMATIONS = {
-  sneaky:        '../public/animations/Flirting Dog.json',
-  angry:         '../public/animations/Angry Dog.json',
-  'tail-wag':    '../public/animations/Happy Dog.json',
-  'rainbow-cap': '../public/animations/Happy Unicorn Dog.json',
-  'mouth-open':  '../public/animations/Smiling Dog.json',
-  'sparkly-eyes':'../public/animations/sparkly-eyes.json'
+  sneaky:          '../public/animations/Flirting Dog.json',
+  angry:           '../public/animations/Angry Dog.json',
+  'tail-wag':      '../public/animations/Happy Dog.json',
+  'rainbow-cap':   '../public/animations/Happy Unicorn Dog.json',
+  'mouth-open':    '../public/animations/Smiling Dog.json',
+  'sparkly-eyes':  '../public/animations/sparkly-eyes.json'
 }
 
 const container = document.getElementById('lottie-container')
@@ -17,14 +17,13 @@ let angryPeriodMs = 60000
 let angryTimer = null
 let petProgress = 0
 let isMouseDown = false
-let currentMode = 'idle' // 'idle' | 'blocking' | 'celebrate'
+let currentMode = 'ambient' // 'ambient' | 'blocking' | 'celebrate'
 
 function playAnimation(name, loop = true) {
   if (currentAnim) {
     currentAnim.destroy()
     currentAnim = null
   }
-
   currentAnim = lottie.loadAnimation({
     container,
     renderer: 'svg',
@@ -77,11 +76,10 @@ function onPettingComplete() {
   isMouseDown = false
   hideProgressBar()
   hideGuiltMsg()
-  currentMode = 'idle'
 
   playAnimation('tail-wag', false)
   currentAnim.addEventListener('complete', () => {
-    ipcRenderer.send('hide-pet')
+    ipcRenderer.send('go-ambient')
   })
 }
 
@@ -98,8 +96,7 @@ document.addEventListener('mouseup', () => {
 container.addEventListener('mousemove', (e) => {
   if (!isMouseDown || currentMode !== 'blocking') return
 
-  const isHorizontal = Math.abs(e.movementX) > 2 && Math.abs(e.movementY) < 6
-  if (isHorizontal) {
+  if (Math.abs(e.movementX) > 2 && Math.abs(e.movementY) < 6) {
     petProgress += Math.abs(e.movementX)
     updateProgressBar(Math.min(petProgress / 100, 1))
   }
@@ -110,15 +107,24 @@ container.addEventListener('mousemove', (e) => {
   }
 })
 
-// Notify main process to enable mouse events over the dog
 container.addEventListener('mouseenter', () => {
-  ipcRenderer.send('pet-area-enter')
+  if (currentMode === 'blocking') ipcRenderer.send('pet-area-enter')
 })
 container.addEventListener('mouseleave', () => {
   ipcRenderer.send('pet-area-leave')
 })
 
-// ── IPC: trigger the pet overlay ──────────────────────────────────────────────
+// ── IPC: ambient mode ─────────────────────────────────────────────────────────
+ipcRenderer.on('go-ambient', () => {
+  currentMode = 'ambient'
+  clearTimeout(angryTimer)
+  hideGuiltMsg()
+  hideProgressBar()
+  resetPetting()
+  playAnimation('mouth-open')
+})
+
+// ── IPC: trigger blocking mode ────────────────────────────────────────────────
 ipcRenderer.on('trigger-pet', (_, data) => {
   const { count } = data
   currentMode = 'blocking'
@@ -126,20 +132,31 @@ ipcRenderer.on('trigger-pet', (_, data) => {
   hideGuiltMsg()
   hideProgressBar()
 
-  // First animation: sneaky. Escalate to angry if ignored for 60s.
   playAnimation('sneaky')
   showGuiltMsg(count)
 
   clearTimeout(angryTimer)
   angryTimer = setTimeout(() => {
-    if (currentMode === 'blocking') {
-      playAnimation('angry')
-    }
+    if (currentMode === 'blocking') playAnimation('angry')
   }, angryPeriodMs)
 })
 
-ipcRenderer.on('update-angry-period', (_, ms) => {
-  angryPeriodMs = ms
+// ── IPC: user returned to work ────────────────────────────────────────────────
+ipcRenderer.on('user-returned', () => {
+  currentMode = 'celebrate'
+  clearTimeout(angryTimer)
+  hideGuiltMsg()
+  hideProgressBar()
+
+  playAnimation('sparkly-eyes', false)
+  currentAnim.addEventListener('complete', () => {
+    ipcRenderer.send('go-ambient')
+  })
+
+  // Fallback in case animation has no end
+  setTimeout(() => {
+    if (currentMode === 'celebrate') ipcRenderer.send('go-ambient')
+  }, 3000)
 })
 
 // ── IPC: celebration (task completed) ────────────────────────────────────────
@@ -150,17 +167,16 @@ ipcRenderer.on('celebrate', () => {
   hideProgressBar()
 
   playAnimation('rainbow-cap', false)
-
   currentAnim.addEventListener('complete', () => {
-    ipcRenderer.send('hide-pet')
-    currentMode = 'idle'
+    ipcRenderer.send('go-ambient')
   })
 
-  // Auto-dismiss after 3 seconds regardless
   setTimeout(() => {
-    if (currentMode === 'celebrate') {
-      ipcRenderer.send('hide-pet')
-      currentMode = 'idle'
-    }
-  }, 1000)
+    if (currentMode === 'celebrate') ipcRenderer.send('go-ambient')
+  }, 3000)
+})
+
+// ── IPC: update angry period ──────────────────────────────────────────────────
+ipcRenderer.on('update-angry-period', (_, ms) => {
+  angryPeriodMs = ms
 })
